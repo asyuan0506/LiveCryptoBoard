@@ -6,6 +6,7 @@ from typing import Dict, Set
 import logging
 
 from binance_websocket import BinanceWebSocket
+from bybit_websocket import BybitWebSocket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,6 +14,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+ws_pool = []
 
 # 支援的加密貨幣列表
 SUPPORTED_COINS = {
@@ -31,27 +34,24 @@ price_cache: Dict[str, Dict[str, float]] = {}  # {coin: {exchange: price}}
 user_watching: Dict[str, str] = {}  # {session_id: coin_symbol} - 追蹤每個使用者正在查看的幣種
 active_subscriptions: Dict[str, int] = {}  # {coin_symbol: count} - 追蹤每個幣種的訂閱數量
 
-binance_ws = None
-
-def on_binance_price_update(symbol: str, price: float):
+def on_price_update(symbol: str, price: float, exchange: str):
     """
-    Binance callback for price updates
-    只發送給正在查看該幣種的使用者
+    通用價格更新處理函數
     """
     # 更新價格快取
     if symbol not in price_cache:
         price_cache[symbol] = {}
-    price_cache[symbol]['binance'] = price
+    price_cache[symbol][exchange] = price
     
     # 只發送給正在查看這個幣種的使用者
     socketio.emit('price_update', {
         'symbol': symbol,
-        'exchange': 'binance',
+        'exchange': exchange,
         'price': price,
         'timestamp': datetime.now().isoformat()
     }, room=f'coin_{symbol}')
     
-    logger.debug(f"價格更新已發送到 room coin_{symbol}: Binance {symbol} = ${price:,.2f}")
+    logger.debug(f"價格更新已發送到 room coin_{symbol}: {exchange} {symbol} = ${price:,.2f}")
 
 
 def update_subscriptions(symbol: str, increment: bool = True):
@@ -64,7 +64,8 @@ def update_subscriptions(symbol: str, increment: bool = True):
         
         # 如果是第一次訂閱，通知 WebSocket 開始接收該幣種資料
         if active_subscriptions[symbol] == 1:
-            binance_ws.subscribe(symbol)
+            for ws in ws_pool:
+                ws.subscribe(symbol)
             logger.info(f"開始訂閱 Binance {symbol} 資料")
     else:
         if symbol in active_subscriptions:
@@ -73,7 +74,8 @@ def update_subscriptions(symbol: str, increment: bool = True):
             
             # 如果沒有人訂閱了，取消 WebSocket 訂閱
             if active_subscriptions[symbol] == 0:
-                binance_ws.unsubscribe(symbol)
+                for ws in ws_pool:
+                    ws.unsubscribe(symbol) 
                 logger.info(f"停止訂閱 Binance {symbol} 資料")
 
 
@@ -169,16 +171,18 @@ def handle_unwatch_coin(data):
 
 if __name__ == '__main__':
     # 初始化並啟動 Binance WebSocket
-    logger.info("正在啟動 Binance WebSocket...")
-    binance_ws = BinanceWebSocket(callback=on_binance_price_update)
-    binance_ws.start()
-    
+    logger.info("正在啟動 WebSocket...")
+    ws_pool.append(BinanceWebSocket(callback=on_price_update))
+    ws_pool.append(BybitWebSocket(callback=on_price_update))
+    for ws in ws_pool:
+        ws.start()
+
     try:
         # 啟動 Flask-SocketIO 伺服器
         logger.info("正在啟動 Flask 伺服器...")
         socketio.run(app, debug=True, port=5000, use_reloader=False)
     finally:
         # 關閉 WebSocket 連接
-        if binance_ws:
-            logger.info("正在關閉 Binance WebSocket...")
-            binance_ws.stop()
+        for ws in ws_pool:
+            logger.info(f"正在關閉 {ws.__class__.__name__} WebSocket...")
+            ws.stop()
