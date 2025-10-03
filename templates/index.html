@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密貨幣即時看板 - Live Crypto Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .coin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .coin-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .coin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .coin-symbol {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .coin-name {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .coin-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .view-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            width: 100%;
+        }
+
+        .view-btn:hover {
+            opacity: 0.9;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Live Crypto Board</h1>
+            <p class="subtitle">即時加密貨幣價格追蹤系統</p>
+            <p style="margin-top: 10px; font-size: 0.95rem;">選擇您想要追蹤的加密貨幣</p>
+        </header>
+
+        <div class="coin-grid">
+            {% for symbol, name in coins.items() %}
+            <div class="coin-card" onclick="viewCoin('{{ symbol }}')">
+                <div class="coin-icon">
+                    {% if symbol == 'BTC' %}💰
+                    {% elif symbol == 'ETH' %}💎
+                    {% elif symbol == 'BNB' %}🔶
+                    {% elif symbol == 'SOL' %}☀️
+                    {% elif symbol == 'XRP' %}💧
+                    {% elif symbol == 'ADA' %}♠️
+                    {% elif symbol == 'DOGE' %}🐕
+                    {% elif symbol == 'MATIC' %}🟣
+                    {% else %}🪙
+                    {% endif %}
+                </div>
+                <div class="coin-symbol">{{ symbol }}</div>
+                <div class="coin-name">{{ name }}</div>
+                <button class="view-btn">查看即時價格</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function viewCoin(symbol) {
+            // 導航到該幣種的專屬頁面
+            window.location.href = `/coin/${symbol}`;
+        }
+
+        // 添加一些動畫效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.coin-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
