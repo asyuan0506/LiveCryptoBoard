@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class BinanceWebSocket:
+class BinanceWebSocket: # TODO: subscribe
     """Binance WebSocket 連接管理器"""
     
     def __init__(self, callback: Callable[[str, float, str], None]):

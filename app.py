@@ -12,6 +12,7 @@ from binance_websocket import BinanceWebSocket
 from bybit_websocket import BybitWebSocket
 from coinbase_websocket import CoinbaseWebSocket
 from okx_websocket import OkxWebSocket
+from bitget_websocket import BitgetWebSocket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,12 +39,12 @@ user_watching: Dict[str, str] = {}  # {session_id: coin_symbol} - 追蹤每個�
 active_subscriptions: Dict[str, int] = {}  # {coin_symbol: count} - 追蹤每個幣種的訂閱數量
 ws_pool = []
 
-def on_price_update(symbol: str, price: float, exchange: str):
+def on_price_update(symbol: str, price: float, exchange: str): # TODO: timestamp
     """
     通用價格更新處理函數
     """
     # 更新價格快取
-    print(f"價格更新: {exchange} {symbol} = ${price:,.2f}")
+    logger.debug(f"價格更新: {exchange} {symbol} = ${price:,.2f}")
     if symbol not in price_cache:
         price_cache[symbol] = {}
     price_cache[symbol][exchange] = price
@@ -182,6 +183,7 @@ if __name__ == '__main__':
     ws_pool.append(BybitWebSocket(callback=on_price_update))
     ws_pool.append(CoinbaseWebSocket(callback=on_price_update))
     ws_pool.append(OkxWebSocket(callback=on_price_update))
+    ws_pool.append(BitgetWebSocket(callback=on_price_update))
     for ws in ws_pool:
         ws.start()
 
