@@ -11,6 +11,7 @@ import logging
 from binance_websocket import BinanceWebSocket
 from bybit_websocket import BybitWebSocket
 from coinbase_websocket import CoinbaseWebSocket
+from okx_websocket import OkxWebSocket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -180,6 +181,7 @@ if __name__ == '__main__':
     ws_pool.append(BinanceWebSocket(callback=on_price_update))
     ws_pool.append(BybitWebSocket(callback=on_price_update))
     ws_pool.append(CoinbaseWebSocket(callback=on_price_update))
+    ws_pool.append(OkxWebSocket(callback=on_price_update))
     for ws in ws_pool:
         ws.start()
 

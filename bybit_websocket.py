@@ -77,11 +77,7 @@ class BybitWebSocket:
             # 清除該幣種的最後價格記錄
             if symbol in self.last_prices:
                 del self.last_prices[symbol]
-            
-            if self.ws and self.is_running:
-                self._disconnect()
-                
-            
+                      
     def _disconnect(self):
         """斷開 WebSocket"""
         if self.ws:
@@ -209,7 +205,7 @@ class BybitWebSocket:
         """WebSocket 錯誤時的callback"""
         logger.error(f"Bybit WebSocket 錯誤: {error}")
 
-    def _on_ping(self, ws, message):
+    def _on_ping(self, ws, message): # TODO: Initiative ping if needed
         """WebSocket 收到 ping 時的callback"""
         logger.debug("收到 Bybit WebSocket ping")
         try:
