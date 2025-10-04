@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,12 +14,10 @@
             margin: 0;
             padding: 0;
         }
-
         .container {
             min-height: 100vh;
             background: #f5f7fa;
         }
-
         header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -28,7 +25,6 @@
             text-align: center;
             position: relative;
         }
-
         .back-btn {
             position: absolute;
             left: 30px;
@@ -43,28 +39,23 @@
             transition: all 0.3s;
             font-weight: 600;
         }
-
         .back-btn:hover {
             background: white;
             color: #667eea;
         }
-
         header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
         }
-
         .subtitle {
             font-size: 1.1rem;
             opacity: 0.9;
         }
-
         .main-content {
             max-width: 1200px;
             margin: 40px auto;
             padding: 0 20px;
         }
-
         .price-card {
             background: white;
             border-radius: 15px;
@@ -72,7 +63,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
         }
-
         .exchange-header {
             display: flex;
             align-items: center;
@@ -81,13 +71,11 @@
             padding-bottom: 20px;
             border-bottom: 2px solid #e9ecef;
         }
-
         .exchange-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-
         .exchange-logo {
             width: 50px;
             height: 50px;
@@ -96,40 +84,33 @@
             background: #f8f9fa;
             padding: 5px;
         }
-
         .exchange-name {
             font-size: 1.5rem;
             font-weight: 600;
             color: #333;
         }
-
         .connection-status {
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
         }
-
         .status-connected {
             background: #d4edda;
             color: #155724;
         }
-
         .status-connecting {
             background: #fff3cd;
             color: #856404;
         }
-
         .status-disconnected {
             background: #f8d7da;
             color: #721c24;
         }
-
         .price-display {
             text-align: center;
             padding: 30px;
         }
-
         .price-label {
             font-size: 1rem;
             color: #666;
@@ -137,7 +118,6 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-
         .price-value {
             font-size: 3.5rem;
             font-weight: bold;
@@ -145,33 +125,27 @@
             margin-bottom: 15px;
             font-family: 'Courier New', monospace;
         }
-
         .price-change {
             font-size: 1.2rem;
             margin-top: 10px;
         }
-
         .price-up {
             color: #28a745;
         }
-
         .price-down {
             color: #dc3545;
         }
-
         .last-update {
             font-size: 0.9rem;
             color: #999;
             margin-top: 15px;
         }
-
         .no-data {
             text-align: center;
             padding: 40px;
             color: #999;
             font-size: 1.1rem;
         }
-
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -181,29 +155,16 @@
             border-top-color: #667eea;
             animation: spin 1s ease-in-out infinite;
         }
-
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
-
         @keyframes priceUpdate {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-
         .price-updated {
             animation: priceUpdate 0.3s ease-in-out;
         }
-
         .info-banner {
             background: #e7f3ff;
             border-left: 4px solid #667eea;
@@ -211,94 +172,88 @@
             margin-bottom: 30px;
             border-radius: 8px;
         }
-
         .info-banner p {
             margin: 0;
             color: #004085;
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <header>
             <a href="/" class="back-btn">← 返回</a>
             <h1>{{ coin_name }} ({{ coin_symbol }})</h1>
-            <p class="subtitle">即時價格追蹤</p>
+            <p class="subtitle">即時價格追蹤 - 跨五個交易所</p>
         </header>
-
         <div class="main-content">
-
-            <!-- Binance 價格卡片 -->
+            {% for exchange in ['binance', 'bybit', 'coinbase', 'okx', 'bitget'] %}
             <div class="price-card">
                 <div class="exchange-header">
                     <div class="exchange-info">
-                        <img src="{{ url_for('static', filename='../img/binance.png') }}" alt="Binance"
+                        <img src="{{ url_for('static', filename='img/' + exchange + '.png') }}" alt="{{ exchange | capitalize }}"
                             class="exchange-logo" onerror="this.style.display='none'">
-                        <div class="exchange-name">Binance</div>
+                        <div class="exchange-name">{{ exchange | capitalize }}</div>
                     </div>
-                    <div class="connection-status status-connecting" id="binance-status">
+                    <div class="connection-status status-connecting" id="{{ exchange }}-status">
                         <span class="loading-spinner"></span> 連接中...
                     </div>
                 </div>
-
-                <div class="price-display" id="binance-price-display">
+                <div class="price-display" id="{{ exchange }}-price-display" aria-live="polite">
                     <div class="no-data">等待價格資料...</div>
                 </div>
             </div>
+            {% endfor %}
         </div>
     </div>
-
     <script>
         // Socket.IO 連接
         const socket = io({
             transports: ['websocket', 'polling']
         });
-
         const coinSymbol = '{{ coin_symbol }}';
-        let lastPrice = null;
-        let priceHistory = [];
-
+        const exchanges = ['binance', 'bybit', 'coinbase', 'okx', 'bitget'];
+        let lastPrices = {};
+        let priceHistories = {};
+        // 初始化每個交易所的變數
+        exchanges.forEach(exchange => {
+            lastPrices[exchange] = null;
+            priceHistories[exchange] = [];
+        });
         // 連接成功
         socket.on('connect', function () {
             console.log('已連接到伺服器');
-            updateConnectionStatus('connected');
-
-            // 告訴伺服器我們要追蹤這個幣種
+            exchanges.forEach(exchange => {
+                updateConnectionStatus(exchange, 'connected');
+            });
             socket.emit('watch_coin', { symbol: coinSymbol });
         });
-
         // 連接回應
         socket.on('watch_response', function (data) {
             console.log('追蹤回應:', data);
         });
-
         // 斷線
         socket.on('disconnect', function () {
             console.log('與伺服器斷線');
-            updateConnectionStatus('disconnected');
+            exchanges.forEach(exchange => {
+                updateConnectionStatus(exchange, 'disconnected');
+            });
         });
-
         // 接收價格更新
         socket.on('price_update', function (data) {
             console.log('收到價格更新:', data);
-
-            if (data.symbol === coinSymbol) {
-                updatePrice(data);
+            if (data.symbol === coinSymbol && exchanges.includes(data.exchange)) {
+                updatePrice(data.exchange, data);
             }
         });
-
         // 錯誤處理
         socket.on('error', function (data) {
             console.error('錯誤:', data);
             alert('錯誤: ' + data.message);
         });
-
         // 更新連接狀態
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('binance-status');
+        function updateConnectionStatus(exchange, status) {
+            const statusEl = document.getElementById(`${exchange}-status`);
             statusEl.classList.remove('status-connected', 'status-connecting', 'status-disconnected');
-
             if (status === 'connected') {
                 statusEl.classList.add('status-connected');
                 statusEl.innerHTML = '● 已連接';
@@ -310,36 +265,22 @@
                 statusEl.innerHTML = '● 已斷線';
             }
         }
-
         // 更新價格顯示
-        function updatePrice(data) {
+        function updatePrice(exchange, data) {
             const price = data.price;
             const timestamp = new Date(data.timestamp);
-            const displayEl = document.getElementById('binance-price-display');
-
-            // 更新連接狀態
-            updateConnectionStatus('connected');
-
-            // 計算價格變化
-            let priceChange = '';
-            let priceChangeClass = '';
-
-            lastPrice = price;
-            priceHistory.push({ price, timestamp });
-
-            // 只保留最近 100 筆記錄
-            if (priceHistory.length > 100) {
-                priceHistory.shift();
+            const displayEl = document.getElementById(`${exchange}-price-display`);
+            updateConnectionStatus(exchange, 'connected');
+            lastPrices[exchange] = price;
+            priceHistories[exchange].push({ price, timestamp });
+            if (priceHistories[exchange].length > 100) {
+                priceHistories[exchange].shift();
             }
-
-            // 更新顯示
             displayEl.innerHTML = `
                 <div class="price-label">當前價格 (USDT)</div>
                 <div class="price-value price-updated">$${String(price)}</div>
                 <div class="last-update">最後更新: ${formatTime(timestamp)}</div>
             `;
-
-            // 移除動畫類別，以便下次更新時重新觸發
             setTimeout(() => {
                 const priceValueEl = displayEl.querySelector('.price-value');
                 if (priceValueEl) {
@@ -347,7 +288,6 @@
                 }
             }, 300);
         }
-
         // 格式化時間
         function formatTime(date) {
             const h = String(date.getHours()).padStart(2, '0');
@@ -356,12 +296,10 @@
             const ms = String(date.getMilliseconds()).padStart(3, '0');
             return `${h}:${m}:${s}.${ms}`;
         }
-
         // 頁面卸載時取消追蹤
         window.addEventListener('beforeunload', function () {
             socket.emit('unwatch_coin', { symbol: coinSymbol });
         });
     </script>
 </body>
-
 </html>
