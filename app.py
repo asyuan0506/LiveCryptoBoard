@@ -1,3 +1,6 @@
+import eventlet # 使用 async_mode eventlet
+eventlet.monkey_patch() # 用這個才可以讓async_mode = 'eventlet' 正常運作 否則使用 mode 'threading'
+
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
@@ -7,15 +10,14 @@ import logging
 
 from binance_websocket import BinanceWebSocket
 from bybit_websocket import BybitWebSocket
+from coinbase_websocket import CoinbaseWebSocket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
-
-ws_pool = []
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # 支援的加密貨幣列表
 SUPPORTED_COINS = {
@@ -33,16 +35,18 @@ SUPPORTED_COINS = {
 price_cache: Dict[str, Dict[str, float]] = {}  # {coin: {exchange: price}}
 user_watching: Dict[str, str] = {}  # {session_id: coin_symbol} - 追蹤每個使用者正在查看的幣種
 active_subscriptions: Dict[str, int] = {}  # {coin_symbol: count} - 追蹤每個幣種的訂閱數量
+ws_pool = []
 
 def on_price_update(symbol: str, price: float, exchange: str):
     """
     通用價格更新處理函數
     """
     # 更新價格快取
+    print(f"價格更新: {exchange} {symbol} = ${price:,.2f}")
     if symbol not in price_cache:
         price_cache[symbol] = {}
     price_cache[symbol][exchange] = price
-    
+    logger.debug(f"價格更新快取: {exchange} {symbol} = ${price:,.2f}")
     # 只發送給正在查看這個幣種的使用者
     socketio.emit('price_update', {
         'symbol': symbol,
@@ -143,14 +147,15 @@ def handle_watch_coin(data):
     logger.info(f"使用者 {request.sid} 開始查看 {symbol}")
     
     # 發送當前快取的價格（如果有）
-    if symbol in price_cache and 'binance' in price_cache[symbol]:
-        emit('price_update', {
-            'symbol': symbol,
-            'exchange': 'binance',
-            'price': price_cache[symbol]['binance'],
-            'timestamp': datetime.now().isoformat()
-        })
-    
+    if symbol in price_cache :
+        for exchange, price in price_cache[symbol].items():
+            emit('price_update', {
+                'symbol': symbol,
+                'exchange': exchange,
+                'price': price,
+                'timestamp': datetime.now().isoformat()
+            }, room=f'coin_{symbol}')
+            logger.debug(f"發送快取價格到 room coin_{symbol}: {exchange} {symbol} = ${price:,.2f}")
     emit('watch_response', {'status': 'success', 'symbol': symbol})
 
 
@@ -174,6 +179,7 @@ if __name__ == '__main__':
     logger.info("正在啟動 WebSocket...")
     ws_pool.append(BinanceWebSocket(callback=on_price_update))
     ws_pool.append(BybitWebSocket(callback=on_price_update))
+    ws_pool.append(CoinbaseWebSocket(callback=on_price_update))
     for ws in ws_pool:
         ws.start()
 

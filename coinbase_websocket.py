@@ -8,16 +8,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-class BybitWebSocket:
+class CoinbaseWebSocket:
     def __init__(self, callback: Callable[[str, float, str], None]):
         """
-        初始化 Bybit WebSocket
+        初始化 Coinbase WebSocket
 
         Args:
             callback: 價格更新回調函數，接收 (symbol, price) 參數
         """
-        self.base_url = "wss://stream.bybit.com/v5/public/spot"
+        self.base_url = "wss://ws-feed.exchange.coinbase.com"
         self.callback = callback
         self.ws = None
         self.ws_thread = None
@@ -35,13 +34,13 @@ class BybitWebSocket:
         self.is_running = True
         self.ws_thread = threading.Thread(target=self._run, daemon=True)
         self.ws_thread.start()
-        logger.info("Bybit WebSocket 已啟動")
+        logger.info("Coinbase WebSocket 已啟動")
         
     def stop(self):
         """停止 WebSocket 連接"""
         self.is_running = False
         self._disconnect()
-        logger.info("Bybit WebSocket 已停止")
+        logger.info("Coinbase WebSocket 已停止")
         
     def subscribe(self, symbol: str):
         """
@@ -55,8 +54,8 @@ class BybitWebSocket:
             try:
                 self._subscribe(self.ws, symbol)
             except Exception:
-                logger.debug("Bybit ws 尚未就緒，訂閱將在連線建立後送出")
-            logger.info(f"已登錄 Bybit {symbol} 訂閱（將在連線可用時發送）")
+                logger.debug("Coinbase ws 尚未就緒，訂閱將在連線建立後送出")
+            logger.info(f"已登錄 Coinbase {symbol} 訂閱（將在連線可用時發送）")
             
                 
     def unsubscribe(self, symbol: str):
@@ -70,9 +69,9 @@ class BybitWebSocket:
             self.subscribed_symbols.remove(symbol)
             try:
                 self._unsubscribe(self.ws, symbol)
-                logger.info(f"已取消 Bybit {symbol} 訂閱（如連線可用已發送取消請求）")
+                logger.info(f"已取消 Coinbase {symbol} 訂閱（如連線可用已發送取消請求）")
             except Exception:
-                logger.debug("Bybit ws 尚未就緒，取消訂閱已從本地清單移除")
+                logger.debug("Coinbase ws 尚未就緒，取消訂閱已從本地清單移除")
             
             # 清除該幣種的最後價格記錄
             if symbol in self.last_prices:
@@ -96,7 +95,7 @@ class BybitWebSocket:
                     time.sleep(2)
                     continue
 
-                logger.info(f"正在連接 Bybit WebSocket: {self.base_url}")
+                logger.info(f"正在連接 Coinbase WebSocket: {self.base_url}")
                 
                 self.ws = websocket._app.WebSocketApp(
                     self.base_url,
@@ -116,20 +115,20 @@ class BybitWebSocket:
                     time.sleep(self.reconnect_delay)
                     
             except Exception as e:
-                logger.error(f"Bybit WebSocket 錯誤: {e}")
+                logger.error(f"Coinbase WebSocket 錯誤: {e}")
                 if self.is_running:
                     time.sleep(self.reconnect_delay)
                     
     def _on_open(self, ws):
         """WebSocket 連接建立時的callback"""
-        logger.info("Bybit WebSocket 連接已建立")
-        # 連線建立後，向 Bybit 發送目前已登記的所有訂閱
+        logger.info("Coinbase WebSocket 連接已建立")
+        # 連線建立後，向 Coinbase 發送目前已登記的所有訂閱
         try:
             for symbol in list(self.subscribed_symbols):
                 try:
                     self._subscribe(ws, symbol)
                 except Exception:
-                    logger.exception(f"向 Bybit 發送訂閱 {symbol} 時發生錯誤")
+                    logger.exception(f"向 Coinbase 發送訂閱 {symbol} 時發生錯誤")
         except Exception:
             logger.exception("在 on_open 處理訂閱時發生未預期錯誤")
         
@@ -143,21 +142,17 @@ class BybitWebSocket:
         """
         try:
             data = json.loads(message)
-            # 處理組合串流格式
-            if 'data' in data:
-                data = data['data'][0]
-            # Bybit trade stream 格式            
-            if 's' in data and 'p' in data:
-                symbol_full = data['s']  # ex. BTCUSDT
+            # Coinbase trade stream 格式            
+            if 'product_id' in data and 'price' in data:
+                symbol_full = data['product_id']  # ex. BTC-USDT
                 if symbol_full.endswith('USDT'):
-                    symbol = symbol_full[:-4]  #  BTC
-                    price = float(data['p'])
-                    
+                    symbol = symbol_full[:-5]  #  BTC
+                    price = float(data['price'])
                     # 只有當價格變動時才 callback
                     if symbol not in self.last_prices or self.last_prices[symbol] != price:
                         self.last_prices[symbol] = price
-                        self.callback(symbol, price, 'Bybit')
-                        logger.debug(f"Bybit {symbol} 價格更新: ${price:,.2f}")
+                        self.callback(symbol, price, 'Coinbase')
+                        logger.debug(f"Coinbase {symbol} 價格更新: ${price:,.2f}")
                         
         except json.JSONDecodeError as e:
             logger.error(f"JSON 解析錯誤: {e}")
@@ -165,15 +160,16 @@ class BybitWebSocket:
             logger.error(f"處理訊息時發生錯誤: {e}")
 
     def _subscribe(self, ws, symbol: str):
-        """向 Bybit WebSocket 發送訂閱請求"""
+        """向 Coinbase WebSocket 發送訂閱請求"""
         if not self.is_running:
             return
 
         subscribe_msg = {
-            "op": "subscribe",
-            "args": [
-                f"publicTrade.{symbol}USDT"
-            ]
+            "type": "subscribe",
+            "product_ids": [
+                f"{symbol}-USDT"
+            ],
+            "channels": ["ticker"]
         }
         if not ws:
             # 尚未建立 ws 連線，訂閱會在 on_open 裡送出
@@ -181,37 +177,38 @@ class BybitWebSocket:
             return
         try:
             ws.send(json.dumps(subscribe_msg))
-            logger.info(f"已向 Bybit WebSocket 發送訂閱請求: {symbol}USDT")
+            logger.info(f"已向 Coinbase WebSocket 發送訂閱請求: {symbol}USDT")
         except Exception:
             logger.exception(f"發送訂閱請求 {symbol}USDT 時發生錯誤")
 
     def _unsubscribe(self, ws, symbol: str):
-        """向 Bybit WebSocket 發送取消訂閱請求"""
+        """向 Coinbase WebSocket 發送取消訂閱請求"""
         if not self.is_running:
             return
 
         unsubscribe_msg = {
-            "op": "unsubscribe",
-            "args": [
-                f"publicTrade.{symbol}USDT"
-            ]
+            "type": "unsubscribe",
+            "product_ids": [
+                f"{symbol}-USDT"
+            ],
+            "channels": ["ticker"]
         }
         if not ws:
             logger.debug(f"_unsubscribe: ws 尚未就緒，無法發送取消訂閱 {symbol}")
             return
         try:
             ws.send(json.dumps(unsubscribe_msg))
-            logger.info(f"已向 Bybit WebSocket 發送取消訂閱請求: {symbol}USDT")
+            logger.info(f"已向 Coinbase WebSocket 發送取消訂閱請求: {symbol}USDT")
         except Exception:
             logger.exception(f"發送取消訂閱請求 {symbol}USDT 時發生錯誤")
             
     def _on_error(self, ws, error):
         """WebSocket 錯誤時的callback"""
-        logger.error(f"Bybit WebSocket 錯誤: {error}")
+        logger.error(f"Coinbase WebSocket 錯誤: {error}")
 
     def _on_ping(self, ws, message):
         """WebSocket 收到 ping 時的callback"""
-        logger.debug("收到 Bybit WebSocket ping")
+        logger.debug("收到 Coinbase WebSocket ping")
         try:
             if ws:
                 ws.send(json.dumps({
@@ -227,7 +224,7 @@ class BybitWebSocket:
         """WebSocket 關閉時的callback"""
         for symbol in list(self.subscribed_symbols):
             self.unsubscribe(symbol)
-        logger.info(f"Bybit WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
+        logger.info(f"Coinbase WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
 
 
 # 測試用程式碼
@@ -236,14 +233,14 @@ if __name__ == "__main__":
         print(f"[測試] {symbol}: ${price:,.2f} (來自: {exchange})")
 
     # 建立 WebSocket 實例
-    bybit_ws = BybitWebSocket(callback=test_callback)
+    Coinbase_ws = CoinbaseWebSocket(callback=test_callback)
     
     # 啟動
-    bybit_ws.start()
+    Coinbase_ws.start()
 
     # 訂閱幣種
-    bybit_ws.subscribe("BTC")
-    bybit_ws.subscribe("ETH")
+    Coinbase_ws.subscribe("BTC")
+    Coinbase_ws.subscribe("ETH")
 
     try:
         # 保持運行
@@ -251,4 +248,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n正在停止...")
-        bybit_ws.stop()
+        Coinbase_ws.stop()
