@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ coin_name }} ({{ coin_symbol }}) - Live Crypto Board</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%);
             min-height: 100vh;
             margin: 0;
             padding: 0;
@@ -19,27 +19,32 @@
             background: #f5f7fa;
         }
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #6d28d9 100%);
             color: white;
             padding: 20px;
             text-align: center;
             position: relative;
             border-radius: 0 0 15px 15px;
-            animation: gradientShift 15s ease infinite;
+            animation: gradientShift 10s ease infinite;
         }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        header img {
+            width: 40px;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
         .back-btn {
             position: absolute;
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             color: white;
-            border: 2px solid white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             padding: 8px 16px;
             border-radius: 6px;
             text-decoration: none;
@@ -49,16 +54,16 @@
         }
         .back-btn:hover {
             background: white;
-            color: #667eea;
+            color: #1e40af;
         }
         header h1 {
             font-size: 1.8rem;
             margin: 5px 0;
-            font-weight: 600;
+            font-weight: 700;
         }
         .subtitle {
             font-size: 0.9rem;
-            opacity: 0.9;
+            opacity: 0.85;
             margin: 0;
         }
         .main-content {
@@ -66,7 +71,7 @@
             margin: 20px auto;
             padding: 0 10px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 15px;
         }
         @media (max-width: 600px) {
@@ -75,29 +80,52 @@
             }
         }
         .price-card {
-            background: white;
-            border-radius: 10px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.95));
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .price-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         }
-        .price-card[data-exchange="binance"] { border-left: 3px solid #f0b90b; }
-        .price-card[data-exchange="bybit"] { border-left: 3px solid #00c4b4; }
-        .price-card[data-exchange="coinbase"] { border-left: 3px solid #0052ff; }
-        .price-card[data-exchange="okx"] { border-left: 3px solid #00a1ff; }
-        .price-card[data-exchange="bitget"] { border-left: 3px solid #e84a4a; }
-        .price-card.lowest { background: #e6ffed; border: 2px solid #28a745; }
-        .price-card.highest { background: #ffe6e6; border: 2px solid #dc3545; }
+        .price-card[data-exchange="binance"] {
+            border-left: 4px solid #f0b90b;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 230, 140, 0.1));
+        }
+        .price-card[data-exchange="bybit"] {
+            border-left: 4px solid #00c4b4;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 196, 180, 0.1));
+        }
+        .price-card[data-exchange="coinbase"] {
+            border-left: 4px solid #0052ff;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 82, 255, 0.1));
+        }
+        .price-card[data-exchange="okx"] {
+            border-left: 4px solid #00a1ff;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 161, 255, 0.1));
+        }
+        .price-card[data-exchange="bitget"] {
+            border-left: 4px solid #e84a4a;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(232, 74, 74, 0.1));
+        }
+        .price-card.lowest {
+            background: linear-gradient(145deg, rgba(230, 255, 237, 0.95), rgba(40, 167, 69, 0.2));
+            border: 2px solid #28a745;
+        }
+        .price-card.highest {
+            background: linear-gradient(145deg, rgba(255, 230, 230, 0.95), rgba(220, 53, 69, 0.2));
+            border: 2px solid #dc3545;
+        }
         .exchange-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
         .exchange-info {
             display: flex;
@@ -105,17 +133,18 @@
             gap: 10px;
         }
         .exchange-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
             object-fit: contain;
-            background: #f8f9fa;
-            padding: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .exchange-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e1e1e;
         }
         .connection-status {
             padding: 6px 12px;
@@ -123,21 +152,21 @@
             font-size: 0.8rem;
             font-weight: 600;
         }
-        .status-connected { background: #d4edda; color: #155724; }
-        .status-connecting { background: #fff3cd; color: #856404; }
-        .status-disconnected { background: #f8d7da; color: #721c24; }
+        .status-connected { background: rgba(40, 167, 69, 0.2); color: #155724; }
+        .status-connecting { background: rgba(255, 243, 205, 0.2); color: #856404; }
+        .status-disconnected { background: rgba(248, 215, 218, 0.2); color: #721c24; }
         .price-display { text-align: center; }
         .price-label {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 0.85rem;
+            color: #4b5563;
             margin-bottom: 5px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         .price-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1e40af;
             margin-bottom: 5px;
             font-family: 'Courier New', monospace;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -147,25 +176,25 @@
         }
         @keyframes flash {
             0%, 100% { background: transparent; }
-            50% { background: rgba(102, 126, 234, 0.15); }
+            50% { background: rgba(30, 64, 175, 0.15); }
         }
         .last-update {
             font-size: 0.8rem;
-            color: #999;
+            color: #6b7280;
         }
         .no-data {
             text-align: center;
-            padding: 20px;
-            color: #999;
+            padding: 15px;
+            color: #6b7280;
             font-size: 0.9rem;
         }
         .loading-spinner {
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 2px solid rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(30, 64, 175, 0.3);
             border-radius: 50%;
-            border-top-color: #667eea;
+            border-top-color: #1e40af;
             animation: spin 1s ease-in-out infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -174,6 +203,7 @@
 <body>
     <div class="container">
         <header>
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Crypto Board Logo" onerror="this.style.display='none'">
             <a href="/" class="back-btn">← 返回</a>
             <h1>{{ coin_name }} ({{ coin_symbol }})</h1>
             <p class="subtitle">即時價格追蹤 - 跨五個交易所</p>
@@ -184,14 +214,14 @@
                 <div class="exchange-header">
                     <div class="exchange-info">
                         <img src="{{ url_for('static', filename='img/' + exchange + '.png') }}" alt="{{ exchange | capitalize }}"
-                            class="exchange-logo" onerror="this.style.display='none'">
+                             class="exchange-logo" onerror="this.src='https://via.placeholder.com/50?text={{ exchange | capitalize }}'">
                         <div class="exchange-name">{{ exchange | capitalize }}</div>
                     </div>
                     <div class="connection-status status-connecting" id="{{ exchange }}-status">
                         <span class="loading-spinner"></span> 連接中...
                     </div>
                 </div>
-                <div class="price-display" id="{{ exchange }}-price-display" aria-live="polite">
+                <div class="price-display" id="{{ exchange }}-price-display">
                     <div class="no-data">等待價格資料...</div>
                 </div>
             </div>
@@ -200,36 +230,42 @@
     </div>
     <script>
         const socket = io({ transports: ['websocket', 'polling'] });
-        const coinSymbol = '{{ coin_symbol }}';
+        const coinSymbol = '{{ coin_symbol }}'.toUpperCase(); // 確保大寫
         const exchanges = ['binance', 'bybit', 'coinbase', 'okx', 'bitget'];
         let lastPrices = {};
         let priceHistories = {};
         exchanges.forEach(exchange => {
-            lastPrices[exchange] = null;
+            lastPrices[exchange] = 0; // 初始化避免無數據問題
             priceHistories[exchange] = [];
         });
+
         socket.on('connect', function () {
             console.log('已連接到伺服器');
             exchanges.forEach(exchange => updateConnectionStatus(exchange, 'connected'));
-            socket.emit('watch_coin', { symbol: coinSymbol });
+            socket.emit('watch_coin', { symbol: coinSymbol }); // 發送 watch_coin
         });
+
         socket.on('watch_response', function (data) {
             console.log('追蹤回應:', data);
         });
+
         socket.on('disconnect', function () {
             console.log('與伺服器斷線');
             exchanges.forEach(exchange => updateConnectionStatus(exchange, 'disconnected'));
         });
+
         socket.on('price_update', function (data) {
             console.log('收到價格更新:', data);
             if (data.symbol === coinSymbol && exchanges.includes(data.exchange)) {
                 updatePrice(data.exchange, data);
             }
         });
+
         socket.on('error', function (data) {
             console.error('錯誤:', data);
             alert('錯誤: ' + data.message);
         });
+
         function updateConnectionStatus(exchange, status) {
             const statusEl = document.getElementById(`${exchange}-status`);
             statusEl.classList.remove('status-connected', 'status-connecting', 'status-disconnected');
@@ -244,6 +280,7 @@
                 statusEl.innerHTML = '● 已斷線';
             }
         }
+
         function updatePrice(exchange, data) {
             const price = data.price;
             const timestamp = new Date(data.timestamp);
@@ -265,6 +302,7 @@
             }, 400);
             highlightPrices();
         }
+
         function highlightPrices() {
             const cards = document.querySelectorAll('.price-card');
             const prices = exchanges.map(ex => lastPrices[ex] || 0).filter(p => p > 0);
@@ -274,10 +312,11 @@
             cards.forEach(card => {
                 const price = lastPrices[card.dataset.exchange] || 0;
                 card.classList.remove('lowest', 'highest');
-                if (price === minPrice) card.classList.add('lowest');
-                if (price === maxPrice) card.classList.add('highest');
+                if (price === minPrice && price > 0) card.classList.add('lowest');
+                if (price === maxPrice && price > 0) card.classList.add('highest');
             });
         }
+
         function formatTime(date) {
             const h = String(date.getHours()).padStart(2, '0');
             const m = String(date.getMinutes()).padStart(2, '0');
@@ -285,8 +324,9 @@
             const ms = String(date.getMilliseconds()).padStart(3, '0');
             return `${h}:${m}:${s}.${ms}`;
         }
+
         window.addEventListener('beforeunload', function () {
-            socket.emit('unwatch_coin', { symbol: coinSymbol });
+            socket.emit('unwatch_coin', { symbol: coinSymbol }); // 發送 unwatch_coin
         });
     </script>
 </body>
