@@ -3,320 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ coin_name }} ({{ coin_symbol }}) - Live Crypto Board</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <title>加密貨幣即時看板 - Live Crypto Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        .coin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .coin-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .coin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .coin-symbol {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .coin-name {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .coin-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .view-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            width: 100%;
+        }
+
+        .view-btn:hover {
+            opacity: 0.9;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             margin: 0;
             padding: 0;
         }
+
         .container {
             min-height: 100vh;
             background: #f5f7fa;
         }
-        header {
-            background: linear-gradient(135deg, #1e40af 0%, #6d28d9 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            border-radius: 0 0 15px 15px;
-            animation: gradientShift 10s ease infinite;
-        }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        header img {
-            width: 40px;
-            margin-bottom: 5px;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-        }
-        .back-btn {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .back-btn:hover {
-            background: white;
-            color: #1e40af;
-        }
-        header h1 {
-            font-size: 1.8rem;
-            margin: 5px 0;
-            font-weight: 700;
-        }
-        .subtitle {
-            font-size: 0.9rem;
-            opacity: 0.85;
-            margin: 0;
-        }
-        .main-content {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-        }
-        @media (max-width: 600px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-        .price-card {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.95));
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .price-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-        }
-        .price-card[data-exchange="binance"] {
-            border-left: 4px solid #f0b90b;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 230, 140, 0.1));
-        }
-        .price-card[data-exchange="bybit"] {
-            border-left: 4px solid #00c4b4;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 196, 180, 0.1));
-        }
-        .price-card[data-exchange="coinbase"] {
-            border-left: 4px solid #0052ff;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 82, 255, 0.1));
-        }
-        .price-card[data-exchange="okx"] {
-            border-left: 4px solid #00a1ff;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 161, 255, 0.1));
-        }
-        .price-card[data-exchange="bitget"] {
-            border-left: 4px solid #e84a4a;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(232, 74, 74, 0.1));
-        }
-        .price-card.lowest {
-            background: linear-gradient(145deg, rgba(230, 255, 237, 0.95), rgba(40, 167, 69, 0.2));
-            border: 2px solid #28a745;
-        }
-        .price-card.highest {
-            background: linear-gradient(145deg, rgba(255, 230, 230, 0.95), rgba(220, 53, 69, 0.2));
-            border: 2px solid #dc3545;
-        }
-        .exchange-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        .exchange-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .exchange-logo {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            object-fit: contain;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .exchange-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1e1e1e;
-        }
-        .connection-status {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        .status-connected { background: rgba(40, 167, 69, 0.2); color: #155724; }
-        .status-connecting { background: rgba(255, 243, 205, 0.2); color: #856404; }
-        .status-disconnected { background: rgba(248, 215, 218, 0.2); color: #721c24; }
-        .price-display { text-align: center; }
-        .price-label {
-            font-size: 0.85rem;
-            color: #4b5563;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .price-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #1e40af;
-            margin-bottom: 5px;
-            font-family: 'Courier New', monospace;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        .price-updated {
-            animation: flash 0.4s ease;
-        }
-        @keyframes flash {
-            0%, 100% { background: transparent; }
-            50% { background: rgba(30, 64, 175, 0.15); }
-        }
-        .last-update {
-            font-size: 0.8rem;
-            color: #6b7280;
-        }
-        .no-data {
-            text-align: center;
-            padding: 15px;
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(30, 64, 175, 0.3);
-            border-radius: 50%;
-            border-top-color: #1e40af;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Crypto Board Logo" onerror="this.style.display='none'">
-            <a href="/" class="back-btn">← 返回</a>
-            <h1>{{ coin_name }} ({{ coin_symbol }})</h1>
-            <p class="subtitle">即時價格追蹤 - 跨五個交易所</p>
+            <h1>🚀 Live Crypto Board</h1>
+            <p class="subtitle">即時加密貨幣價格追蹤系統</p>
+            <p style="margin-top: 10px; font-size: 0.95rem;">選擇您想要追蹤的加密貨幣</p>
         </header>
-        <div class="main-content">
-            {% for exchange in ['binance', 'bybit', 'coinbase', 'okx', 'bitget'] %}
-            <div class="price-card" data-exchange="{{ exchange }}">
-                <div class="exchange-header">
-                    <div class="exchange-info">
-                        <img src="{{ url_for('static', filename='img/' + exchange + '.png') }}" alt="{{ exchange | capitalize }}"
-                            class="exchange-logo" onerror="this.style.display='none'">
-                        <div class="exchange-name">{{ exchange | capitalize }}</div>
-                    </div>
-                    <div class="connection-status status-connecting" id="{{ exchange }}-status">
-                        <span class="loading-spinner"></span> 連接中...
-                    </div>
+
+        <div class="coin-grid">
+            {% for symbol, name in coins.items() %}
+            <div class="coin-card" onclick="viewCoin('{{ symbol }}')">
+                <div class="coin-icon">
+                    {% if symbol == 'BTC' %}💰
+                    {% elif symbol == 'ETH' %}💎
+                    {% elif symbol == 'BNB' %}🔶
+                    {% elif symbol == 'SOL' %}☀️
+                    {% elif symbol == 'XRP' %}💧
+                    {% elif symbol == 'ADA' %}♠️
+                    {% elif symbol == 'DOGE' %}🐕
+                    {% elif symbol == 'MATIC' %}🟣
+                    {% else %}🪙
+                    {% endif %}
                 </div>
-                <div class="price-display" id="{{ exchange }}-price-display" aria-live="polite">
-                    <div class="no-data">等待價格資料...</div>
-                </div>
+                <div class="coin-symbol">{{ symbol }}</div>
+                <div class="coin-name">{{ name }}</div>
+                <button class="view-btn">查看即時價格</button>
             </div>
             {% endfor %}
         </div>
     </div>
+
     <script>
-        const socket = io({ transports: ['websocket', 'polling'] });
-        const coinSymbol = '{{ coin_symbol }}';
-        const exchanges = ['binance', 'bybit', 'coinbase', 'okx', 'bitget'];
-        let lastPrices = {};
-        let priceHistories = {};
-        exchanges.forEach(exchange => {
-            lastPrices[exchange] = null;
-            priceHistories[exchange] = [];
-        });
-        socket.on('connect', function () {
-            console.log('已連接到伺服器');
-            exchanges.forEach(exchange => updateConnectionStatus(exchange, 'connected'));
-            socket.emit('watch_coin', { symbol: coinSymbol });
-        });
-        socket.on('watch_response', function (data) {
-            console.log('追蹤回應:', data);
-        });
-        socket.on('disconnect', function () {
-            console.log('與伺服器斷線');
-            exchanges.forEach(exchange => updateConnectionStatus(exchange, 'disconnected'));
-        });
-        socket.on('price_update', function (data) {
-            console.log('收到價格更新:', data);
-            if (data.symbol === coinSymbol && exchanges.includes(data.exchange)) {
-                updatePrice(data.exchange, data);
-            }
-        });
-        socket.on('error', function (data) {
-            console.error('錯誤:', data);
-            alert('錯誤: ' + data.message);
-        });
-        function updateConnectionStatus(exchange, status) {
-            const statusEl = document.getElementById(`${exchange}-status`);
-            statusEl.classList.remove('status-connected', 'status-connecting', 'status-disconnected');
-            if (status === 'connected') {
-                statusEl.classList.add('status-connected');
-                statusEl.innerHTML = '● 已連接';
-            } else if (status === 'connecting') {
-                statusEl.classList.add('status-connecting');
-                statusEl.innerHTML = '<span class="loading-spinner"></span> 連接中...';
-            } else {
-                statusEl.classList.add('status-disconnected');
-                statusEl.innerHTML = '● 已斷線';
-            }
+        function viewCoin(symbol) {
+            window.location.href = `/coin/${symbol}`;
         }
-        function updatePrice(exchange, data) {
-            const price = data.price;
-            const timestamp = new Date(data.timestamp);
-            const displayEl = document.getElementById(`${exchange}-price-display`);
-            updateConnectionStatus(exchange, 'connected');
-            lastPrices[exchange] = price;
-            priceHistories[exchange].push({ price, timestamp });
-            if (priceHistories[exchange].length > 100) {
-                priceHistories[exchange].shift();
-            }
-            displayEl.innerHTML = `
-                <div class="price-label">當前價格 (USDT)</div>
-                <div class="price-value price-updated">$${String(price)}</div>
-                <div class="last-update">最後更新: ${formatTime(timestamp)}</div>
-            `;
-            setTimeout(() => {
-                const priceValueEl = displayEl.querySelector('.price-value');
-                if (priceValueEl) priceValueEl.classList.remove('price-updated');
-            }, 400);
-            highlightPrices();
-        }
-        function highlightPrices() {
-            const cards = document.querySelectorAll('.price-card');
-            const prices = exchanges.map(ex => lastPrices[ex] || 0).filter(p => p > 0);
-            if (prices.length === 0) return;
-            const minPrice = Math.min(...prices);
-            const maxPrice = Math.max(...prices);
-            cards.forEach(card => {
-                const price = lastPrices[card.dataset.exchange] || 0;
-                card.classList.remove('lowest', 'highest');
-                if (price === minPrice) card.classList.add('lowest');
-                if (price === maxPrice) card.classList.add('highest');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.coin-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
             });
-        }
-        function formatTime(date) {
-            const h = String(date.getHours()).padStart(2, '0');
-            const m = String(date.getMinutes()).padStart(2, '0');
-            const s = String(date.getSeconds()).padStart(2, '0');
-            const ms = String(date.getMilliseconds()).padStart(3, '0');
-            return `${h}:${m}:${s}.${ms}`;
-        }
-        window.addEventListener('beforeunload', function () {
-            socket.emit('unwatch_coin', { symbol: coinSymbol });
         });
     </script>
 </body>
