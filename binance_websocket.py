@@ -165,7 +165,7 @@ class BinanceWebSocket: # TODO: subscribe
                     # 只有當價格變動時才 callback
                     if symbol not in self.last_prices or self.last_prices[symbol] != price:
                         self.last_prices[symbol] = price
-                        self.callback(symbol, price, 'Binance')
+                        self.callback(symbol, price, 'binance')
                         logger.debug(f"Binance {symbol} 價格更新: ${price:,.2f}")
                         
         except json.JSONDecodeError as e:

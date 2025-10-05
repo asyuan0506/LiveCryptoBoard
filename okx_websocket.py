@@ -156,7 +156,7 @@ class OkxWebSocket:
                     # 只有當價格變動時才 callback
                     if symbol not in self.last_prices or self.last_prices[symbol] != price:
                         self.last_prices[symbol] = price
-                        self.callback(symbol, price, 'OKX')
+                        self.callback(symbol, price, 'okx')
                         logger.debug(f"OKX {symbol} 價格更新: ${price:,.2f}")
                         
         except json.JSONDecodeError as e:
