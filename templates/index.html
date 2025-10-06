@@ -81,8 +81,26 @@
         }
 
         .coin-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .coin-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            background: #fff;
+            padding: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
         }
 
         .view-btn {
@@ -152,16 +170,7 @@
             {% for symbol, name in coins.items() %}
             <div class="coin-card" onclick="viewCoin('{{ symbol }}')">
                 <div class="coin-icon">
-                    {% if symbol == 'BTC' %}💰
-                    {% elif symbol == 'ETH' %}💎
-                    {% elif symbol == 'BNB' %}🔶
-                    {% elif symbol == 'SOL' %}☀️
-                    {% elif symbol == 'XRP' %}💧
-                    {% elif symbol == 'ADA' %}♠️
-                    {% elif symbol == 'DOGE' %}🐕
-                    {% elif symbol == 'MATIC' %}🟣
-                    {% else %}🪙
-                    {% endif %}
+                    <img src="{{ url_for('static', filename='img/' ~ symbol ~ '.png') }}" alt="{{ symbol }}">
                 </div>
                 <div class="coin-symbol">{{ symbol }}</div>
                 <div class="coin-name">{{ name }}</div>
