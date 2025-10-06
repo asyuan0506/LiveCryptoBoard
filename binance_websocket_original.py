@@ -1,25 +1,48 @@
+"""
+Binance WebSocket 模組
+用於連接 Binance WebSocket API 並接收加密貨幣即時價格
+"""
 import json
 import threading
 import time
 import websocket
 from typing import Callable, Dict, Set
-from basic_websocket import BasicWebSocket
 import logging
+
+from basic_websocket import BasicWebSocket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class BinanceWebSocket(BasicWebSocket):
+class BinanceWebSocket(BasicWebSocket): # TODO: Subscribe
+    """Binance WebSocket 連接管理器"""
+
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://stream.binance.com:9443/ws"
+        self.base_url = "wss://fstream.binance.com"
         self.exchange_name = 'Binance'
-        self.requires_reconnect_on_subscribe = False
-        
+        self.requires_reconnect_on_subscribe = True
+                
     def _get_websocket_url(self):
-        return "wss://stream.binance.com:9443/ws"
-      
+        """
+        生成 WebSocket URL
+        """
+        if not self.subscribed_symbols:
+            return None
+        
+        # 對於多個交易對，使用組合串流
+        streams = [f"{symbol.lower()}usdt@trade" for symbol in self.subscribed_symbols]
+        
+        if len(streams) == 1:
+            return f"wss://stream.binance.com:9443/ws/{streams[0]}"
+        else:
+            # 多個串流使用組合格式
+            return f"wss://stream.binance.com:9443/stream?streams={'/'.join(streams)}"
+                    
+    def _subscribe(self, ws, symbol):
+        pass
+        
     def _on_message(self, ws, message):
         """
         接收到 WebSocket 訊息時的callback
@@ -52,19 +75,14 @@ class BinanceWebSocket(BasicWebSocket):
         except Exception as e:
             logger.error(f"處理訊息時發生錯誤: {e}")
 
-    def _creat_subscribe_msg(self, symbol: str, type: str):
-        """生成 Binance 訂閱訊息"""
-        return {
-            "method": type.upper(),
-            "params":
-            [
-            f"{symbol.lower()}usdt@trade",
-            ],
-            "id": time.time_ns() % (10 ** 8)
-        }
     def _on_ping(self, ws, message):
-        """WebSocket 收到 ping 時的callback"""
-        logger.debug("收到 Binance WebSocket ping")
+        """Override ping handling for Binance: don't send application-level JSON pong.
+
+        Binance uses transport-level ping/pong. Sending an application JSON pong
+        can result in "Invalid request" and a 1008 close. Just log and return.
+        """
+        logger.debug("收到 Binance WebSocket ping — 使用 transport-level pong 回應 (略過應用層回復)")
+
 
 # 測試用程式碼
 if __name__ == "__main__":
@@ -74,13 +92,13 @@ if __name__ == "__main__":
     # 建立 WebSocket 實例
     binance_ws = BinanceWebSocket(callback=test_callback)
     
-    # 啟動
-    binance_ws.start()
-
     # 訂閱幣種
     binance_ws.subscribe("BTC")
     binance_ws.subscribe("ETH")
-
+    
+    # 啟動
+    binance_ws.start()
+    
     try:
         # 保持運行
         while True:
