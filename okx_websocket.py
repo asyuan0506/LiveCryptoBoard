@@ -224,8 +224,8 @@ class OkxWebSocket:
         
     def _on_close(self, ws, close_status_code, close_msg):
         """WebSocket 關閉時的callback"""
-        for symbol in list(self.subscribed_symbols):
-            self.unsubscribe(symbol)
+        # for symbol in list(self.subscribed_symbols):
+        #     self.unsubscribe(symbol)
         logger.info(f"OKX WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
 
 # 測試用程式碼

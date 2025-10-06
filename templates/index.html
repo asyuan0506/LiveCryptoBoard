@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,42 @@
             padding: 40px;
             max-width: 1200px;
             margin: 0 auto;
+        }
+
+        .search-bar {
+            margin: 20px auto 0;
+            max-width: 520px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .search-bar form {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-bar input[type="text"] {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-bar button {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .search-bar button:hover {
+            opacity: 0.95;
         }
 
         .coin-card {
@@ -33,7 +70,7 @@
         .coin-symbol {
             font-size: 2rem;
             font-weight: bold;
-            color: #667eea;
+            color: white;
             margin-bottom: 10px;
         }
 
@@ -96,12 +133,19 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>🚀 Live Crypto Board</h1>
             <p class="subtitle">即時加密貨幣價格追蹤系統</p>
             <p style="margin-top: 10px; font-size: 0.95rem;">選擇您想要追蹤的加密貨幣</p>
+            <div class="search-bar" aria-label="搜尋代號">
+                <form id="search-form">
+                    <input id="search-input" type="text" placeholder="輸入代號，例如 BTC 或 eth" />
+                    <button type="submit">搜尋</button>
+                </form>
+            </div>
         </header>
 
         <div class="coin-grid">
@@ -128,11 +172,24 @@
     </div>
 
     <script>
+        // 搜尋表單：讀取輸入、轉為大寫並導向 /coin/{SYMBOL}
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchForm = document.getElementById('search-form'); const searchInput = document.getElementById('search-input');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const val = (searchInput.value || '').trim().toUpperCase();
+                    if (val) {
+                        window.location.href = `/coin/${val}`;
+                    }
+                });
+            }
+        });
         function viewCoin(symbol) {
             window.location.href = `/coin/${symbol}`;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        (function () {
             const cards = document.querySelectorAll('.coin-card');
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
@@ -143,7 +200,8 @@
                     card.style.transform = 'translateY(0)';
                 }, index * 100);
             });
-        });
+        })();
     </script>
 </body>
+
 </html>

@@ -21,8 +21,7 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# 支援的加密貨幣列表
-SUPPORTED_COINS = {
+BASIC_COIN_LIST = {
     'BTC': 'Bitcoin',
     'ETH': 'Ethereum',
     'BNB': 'Binance Coin',
@@ -87,19 +86,17 @@ def update_subscriptions(symbol: str, increment: bool = True):
 
 @app.route('/')
 def index():
-    return render_template('index.html', coins=SUPPORTED_COINS)
+    return render_template('index.html', coins=BASIC_COIN_LIST)
 
 @app.route('/coin/<symbol>')
 def coin_page(symbol):
     """顯示特定加密貨幣的頁面"""
     symbol = symbol.upper()
     
-    if symbol not in SUPPORTED_COINS:
-        return "不支援的加密貨幣", 404
     
     return render_template('coin.html', 
                          coin_symbol=symbol, 
-                         coin_name=SUPPORTED_COINS[symbol])
+                         coin_name=symbol)
 
 @socketio.on('connect')
 def handle_connect():
@@ -128,10 +125,6 @@ def handle_watch_coin(data):
     處理使用者開始查看某個幣種
     """
     symbol = data.get('symbol', '').upper()
-    
-    if symbol not in SUPPORTED_COINS:
-        emit('error', {'message': '不支援的幣種'})
-        return
     
     # 如果使用者之前在看其他幣種，先取消舊的訂閱
     if request.sid in user_watching:

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,10 +15,12 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             min-height: 100vh;
             background: #f5f7fa;
         }
+
         header {
             background: linear-gradient(135deg, #1e40af 0%, #6d28d9 100%);
             color: white;
@@ -27,16 +30,27 @@
             border-radius: 0 0 15px 15px;
             animation: gradientShift 10s ease infinite;
         }
+
         @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
+
         header img {
             width: 40px;
             margin-bottom: 5px;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
+
         .back-btn {
             position: absolute;
             left: 20px;
@@ -52,33 +66,39 @@
             font-weight: 600;
             transition: all 0.3s;
         }
+
         .back-btn:hover {
             background: white;
             color: #1e40af;
         }
+
         header h1 {
             font-size: 1.8rem;
             margin: 5px 0;
             font-weight: 700;
         }
+
         .subtitle {
             font-size: 0.9rem;
             opacity: 0.85;
             margin: 0;
         }
+
         .main-content {
             max-width: 1200px;
             margin: 20px auto;
             padding: 0 10px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 15px;
         }
+
         @media (max-width: 600px) {
             .main-content {
                 grid-template-columns: 1fr;
             }
         }
+
         .price-card {
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.95));
             border-radius: 12px;
@@ -87,38 +107,47 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+
         .price-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         }
+
         .price-card[data-exchange="binance"] {
             border-left: 4px solid #f0b90b;
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 230, 140, 0.1));
         }
+
         .price-card[data-exchange="bybit"] {
             border-left: 4px solid #00c4b4;
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 196, 180, 0.1));
         }
+
         .price-card[data-exchange="coinbase"] {
             border-left: 4px solid #0052ff;
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 82, 255, 0.1));
         }
+
         .price-card[data-exchange="okx"] {
             border-left: 4px solid #00a1ff;
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(0, 161, 255, 0.1));
         }
+
         .price-card[data-exchange="bitget"] {
             border-left: 4px solid #e84a4a;
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(232, 74, 74, 0.1));
         }
+
         .price-card.lowest {
             background: linear-gradient(145deg, rgba(230, 255, 237, 0.95), rgba(40, 167, 69, 0.2));
             border: 2px solid #28a745;
         }
+
         .price-card.highest {
             background: linear-gradient(145deg, rgba(255, 230, 230, 0.95), rgba(220, 53, 69, 0.2));
             border: 2px solid #dc3545;
         }
+
         .exchange-header {
             display: flex;
             align-items: center;
@@ -127,11 +156,13 @@
             padding-bottom: 8px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
+
         .exchange-info {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .exchange-logo {
             width: 50px;
             height: 50px;
@@ -141,21 +172,39 @@
             padding: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .exchange-name {
             font-size: 1.3rem;
             font-weight: 700;
             color: #1e1e1e;
         }
+
         .connection-status {
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.8rem;
             font-weight: 600;
         }
-        .status-connected { background: rgba(40, 167, 69, 0.2); color: #155724; }
-        .status-connecting { background: rgba(255, 243, 205, 0.2); color: #856404; }
-        .status-disconnected { background: rgba(248, 215, 218, 0.2); color: #721c24; }
-        .price-display { text-align: center; }
+
+        .status-connected {
+            background: rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+
+        .status-connecting {
+            background: rgba(255, 243, 205, 0.2);
+            color: #856404;
+        }
+
+        .status-disconnected {
+            background: rgba(248, 215, 218, 0.2);
+            color: #721c24;
+        }
+
+        .price-display {
+            text-align: center;
+        }
+
         .price-label {
             font-size: 0.85rem;
             color: #4b5563;
@@ -163,6 +212,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         .price-value {
             font-size: 2.2rem;
             font-weight: 700;
@@ -171,23 +221,35 @@
             font-family: 'Courier New', monospace;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
+
         .price-updated {
             animation: flash 0.4s ease;
         }
+
         @keyframes flash {
-            0%, 100% { background: transparent; }
-            50% { background: rgba(30, 64, 175, 0.15); }
+
+            0%,
+            100% {
+                background: transparent;
+            }
+
+            50% {
+                background: rgba(30, 64, 175, 0.15);
+            }
         }
+
         .last-update {
             font-size: 0.8rem;
             color: #6b7280;
         }
+
         .no-data {
             text-align: center;
             padding: 15px;
             color: #6b7280;
             font-size: 0.9rem;
         }
+
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -197,24 +259,32 @@
             border-top-color: #1e40af;
             animation: spin 1s ease-in-out infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Crypto Board Logo" onerror="this.style.display='none'">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Crypto Board Logo"
+                onerror="this.style.display='none'">
             <a href="/" class="back-btn">← 返回</a>
             <h1>{{ coin_name }} ({{ coin_symbol }})</h1>
-            <p class="subtitle">即時價格追蹤 - 跨五個交易所</p>
+            <p class="subtitle">即時價格追蹤</p>
         </header>
         <div class="main-content">
             {% for exchange in ['binance', 'bybit', 'coinbase', 'okx', 'bitget'] %}
             <div class="price-card" data-exchange="{{ exchange }}">
                 <div class="exchange-header">
                     <div class="exchange-info">
-                        <img src="{{ url_for('static', filename='img/' + exchange + '.png') }}" alt="{{ exchange | capitalize }}"
-                             class="exchange-logo" onerror="this.src='https://via.placeholder.com/50?text={{ exchange | capitalize }}'">
+                        <img src="{{ url_for('static', filename='img/' + exchange + '.png') }}"
+                            alt="{{ exchange | capitalize }}" class="exchange-logo"
+                            onerror="this.src='https://via.placeholder.com/50?text={{ exchange | capitalize }}'">
                         <div class="exchange-name">{{ exchange | capitalize }}</div>
                     </div>
                     <div class="connection-status status-connecting" id="{{ exchange }}-status">
@@ -330,4 +400,5 @@
         });
     </script>
 </body>
+
 </html>
