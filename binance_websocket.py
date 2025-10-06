@@ -9,77 +9,21 @@ import websocket
 from typing import Callable, Dict, Set
 import logging
 
+from basic_websocket import BasicWebSocket
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class BinanceWebSocket: # TODO: subscribe
+class BinanceWebSocket(BasicWebSocket): # TODO: Subscribe
     """Binance WebSocket 連接管理器"""
-    
+
     def __init__(self, callback: Callable[[str, float, str], None]):
-        """
-        初始化 Binance WebSocket
-        
-        Args:
-            callback: 價格更新回調函數，接收 (symbol, price) 參數
-        """
-        self.callback = callback
-        self.ws = None
-        self.ws_thread = None
-        self.is_running = False
-        self.subscribed_symbols: Set[str] = set()
-        self.last_prices: Dict[str, float] = {}  # 記錄上次價格，用於判斷是否變動
-        self.reconnect_delay = 5  # 重連延遲（秒）
-        
-    def start(self):
-        """啟動 WebSocket 連接"""
-        if self.is_running:
-            logger.warning("WebSocket 已經在運行中")
-            return
-            
-        self.is_running = True
-        self.ws_thread = threading.Thread(target=self._run, daemon=True)
-        self.ws_thread.start()
-        logger.info("Binance WebSocket 已啟動")
-        
-    def stop(self):
-        """停止 WebSocket 連接"""
-        self.is_running = False
-        self._disconnect()
-        logger.info("Binance WebSocket 已停止")
-        
-    def subscribe(self, symbol: str):
-        """
-        訂閱特定加密貨幣的價格更新
-        symbol: ex. BTC or ETH
-        """
-        symbol = symbol.upper()
-        if symbol not in self.subscribed_symbols:
-            self.subscribed_symbols.add(symbol)
-            logger.info(f"已訂閱 Binance {symbol} 價格更新")
-            
-            # 如果 WebSocket 已連接，重新建立連接以訂閱新的幣種(is_running 還是 True 會重連)
-            if self.ws and self.is_running:
-                self._disconnect()
+        super().__init__(callback)
+        self.exchange_name = 'Binance'
+        self.requires_reconnect_on_subscribe = True
                 
-    def unsubscribe(self, symbol: str):
-        """
-        取消訂閱特定加密貨幣
-        symbol: ex. BTC or ETH
-        """
-        symbol = symbol.upper()
-        if symbol in self.subscribed_symbols:
-            self.subscribed_symbols.remove(symbol)
-            logger.info(f"已取消訂閱 Binance {symbol}")
-            
-            # 清除該幣種的最後價格記錄
-            if symbol in self.last_prices:
-                del self.last_prices[symbol]
-            
-            if self.ws and self.is_running:
-                self._disconnect()
-                
-    def _get_websocket_url(self) :
+    def _get_websocket_url(self):
         """
         生成 WebSocket URL
         """
@@ -94,52 +38,9 @@ class BinanceWebSocket: # TODO: subscribe
         else:
             # 多個串流使用組合格式
             return f"wss://stream.binance.com:9443/stream?streams={'/'.join(streams)}"
-            
-    def _disconnect(self):
-        """斷開 WebSocket"""
-        if self.ws:
-            self.ws.close()
-        
-    def _run(self):
-        """主運行迴圈"""
-        while self.is_running:
-            try:
-                if not self.subscribed_symbols:
-                    logger.info("沒有訂閱的幣種，等待中...")
-                    time.sleep(2)
-                    continue
                     
-                url = self._get_websocket_url()
-                if not url:
-                    time.sleep(2)
-                    continue
-                    
-                logger.info(f"正在連接 Binance WebSocket: {url}")
-                
-                self.ws = websocket._app.WebSocketApp(
-                    url,
-                    on_message=self._on_message,
-                    on_error=self._on_error,
-                    on_close=self._on_close,
-                    on_open=self._on_open
-                )
-                
-                # 運行 WebSocket（這會阻塞直到連接關閉）
-                self.ws.run_forever()
-                
-                # 如果還在運行中，等待後重連
-                if self.is_running:
-                    logger.info(f"WebSocket 已斷開，{self.reconnect_delay} 秒後重連...")
-                    time.sleep(self.reconnect_delay)
-                    
-            except Exception as e:
-                logger.error(f"Binance WebSocket 錯誤: {e}")
-                if self.is_running:
-                    time.sleep(self.reconnect_delay)
-                    
-    def _on_open(self, ws):
-        """WebSocket 連接建立時的callback"""
-        logger.info("Binance WebSocket 連接已建立")
+    def _subscribe(self, ws, symbol):
+        pass
         
     def _on_message(self, ws, message):
         """
@@ -172,14 +73,14 @@ class BinanceWebSocket: # TODO: subscribe
             logger.error(f"JSON 解析錯誤: {e}")
         except Exception as e:
             logger.error(f"處理訊息時發生錯誤: {e}")
-            
-    def _on_error(self, ws, error):
-        """WebSocket 錯誤時的callback"""
-        logger.error(f"Binance WebSocket 錯誤: {error}")
-        
-    def _on_close(self, ws, close_status_code, close_msg):
-        """WebSocket 關閉時的callback"""
-        logger.info(f"Binance WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
+
+    def _on_ping(self, ws, message):
+        """Override ping handling for Binance: don't send application-level JSON pong.
+
+        Binance uses transport-level ping/pong. Sending an application JSON pong
+        can result in "Invalid request" and a 1008 close. Just log and return.
+        """
+        logger.debug("收到 Binance WebSocket ping — 使用 transport-level pong 回應 (略過應用層回復)")
 
 
 # 測試用程式碼
