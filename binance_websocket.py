@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class BinanceWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://stream.binance.com:9443/ws"
         self.exchange_name = 'Binance'
         self.requires_reconnect_on_subscribe = False
         

@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class OkxWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://ws.okx.com:8443/ws/v5/public"
         self.exchange_name = 'OKX'
         self.requires_reconnect_on_subscribe = False
         

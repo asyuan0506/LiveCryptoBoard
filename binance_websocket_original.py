@@ -20,7 +20,6 @@ class BinanceWebSocket(BasicWebSocket): # TODO: Subscribe
 
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://fstream.binance.com"
         self.exchange_name = 'Binance'
         self.requires_reconnect_on_subscribe = True
                 

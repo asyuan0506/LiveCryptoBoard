@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 class CoinbaseWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://ws-feed.exchange.coinbase.com"
         self.exchange_name = 'Coinbase'
         self.requires_reconnect_on_subscribe = False
     

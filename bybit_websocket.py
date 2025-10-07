@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class BybitWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://stream.bybit.com/v5/public/spot"
         self.exchange_name = 'Bybit'
         self.requires_reconnect_on_subscribe = False
     

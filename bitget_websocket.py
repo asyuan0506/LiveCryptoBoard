@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class BitgetWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
-        self.base_url = "wss://ws.bitget.com/v2/ws/public"
         self.exchange_name = 'Bitget'
         self.requires_reconnect_on_subscribe = False
         
