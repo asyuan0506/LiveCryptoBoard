@@ -8,8 +8,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class CoinbaseWebSocket(BasicWebSocket):
-    def __init__(self, callback: Callable[[str, float, str], None]):
-        super().__init__(callback)
+    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None] = lambda x, y: None):
+        super().__init__(callback, status_callback)
         self.exchange_name = 'Coinbase'
         self.base_url = "wss://ws-feed.exchange.coinbase.com"
         

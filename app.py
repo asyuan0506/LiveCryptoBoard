@@ -32,6 +32,8 @@ BASIC_COIN_LIST = {
     'MATIC': 'Polygon',
 }
 
+SUPPORTED_EXCHANGES = ['Binance', 'Bybit', 'Coinbase', 'Okx', 'Bitget']
+
 # Global variables
 price_cache: Dict[str, Dict[str, float]] = {}  # {coin: {exchange: price}}
 user_watching: Dict[str, str] = {}  # {session_id: coin_symbol} - 追蹤每個使用者正在查看的幣種
@@ -58,6 +60,15 @@ def on_price_update(symbol: str, price: float, exchange: str): # TODO: timestamp
     
     logger.debug(f"價格更新已發送到 room coin_{symbol}: {exchange} {symbol} = ${price:,.2f}")
 
+def exchange_status_emit(exchange: str, status: str):
+    try:
+        socketio.emit('exchange_status', {
+            'exchange': exchange.lower(),
+            'status': status,
+        })
+        logger.debug(f"交易所狀態已發送: {exchange} 狀態 {status}")
+    except Exception as e:
+        logger.error(f"發送交易所狀態時發生錯誤: {e}")
 
 def update_subscriptions(symbol: str, increment: bool = True):
     """
@@ -65,23 +76,23 @@ def update_subscriptions(symbol: str, increment: bool = True):
     """
     if increment:
         active_subscriptions[symbol] = active_subscriptions.get(symbol, 0) + 1
-        logger.info(f"{symbol} 訂閱數增加到 {active_subscriptions[symbol]}")
+        logger.debug(f"{symbol} 訂閱數增加到 {active_subscriptions[symbol]}")
         
         # 如果是第一次訂閱，通知 WebSocket 開始接收該幣種資料
         if active_subscriptions[symbol] == 1:
             for ws in ws_pool:
                 ws.subscribe(symbol)
-            logger.info(f"開始訂閱 Binance {symbol} 資料")
+            logger.debug(f"開始訂閱 Binance {symbol} 資料")
     else:
         if symbol in active_subscriptions:
             active_subscriptions[symbol] = max(0, active_subscriptions[symbol] - 1)
-            logger.info(f"{symbol} 訂閱數減少到 {active_subscriptions[symbol]}")
+            logger.debug(f"{symbol} 訂閱數減少到 {active_subscriptions[symbol]}")
             
             # 如果沒有人訂閱了，取消 WebSocket 訂閱
             if active_subscriptions[symbol] == 0:
                 for ws in ws_pool:
                     ws.unsubscribe(symbol) 
-                logger.info(f"停止訂閱 Binance {symbol} 資料")
+                logger.debug(f"停止訂閱 Binance {symbol} 資料")
 
 
 @app.route('/')
@@ -101,14 +112,14 @@ def coin_page(symbol):
 @socketio.on('connect')
 def handle_connect():
     """處理客戶端連接"""
-    logger.info(f"客戶端已連接: {request.sid}")
+    logger.debug(f"客戶端已連接: {request.sid}")
     emit('connection_response', {'status': 'connected', 'sid': request.sid})
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """處理客戶端斷線"""
-    logger.info(f"客戶端已斷線: {request.sid}")
+    logger.debug(f"客戶端已斷線: {request.sid}")
     
     # 如果使用者正在查看某個幣種，取消訂閱
     if request.sid in user_watching:
@@ -116,7 +127,7 @@ def handle_disconnect():
         leave_room(f'coin_{symbol}')
         update_subscriptions(symbol, increment=False)
         del user_watching[request.sid]
-        logger.info(f"使用者 {request.sid} 離開，取消 {symbol} 訂閱")
+        logger.debug(f"使用者 {request.sid} 離開，取消 {symbol} 訂閱")
 
 
 @socketio.on('watch_coin')
@@ -132,14 +143,14 @@ def handle_watch_coin(data):
         if old_symbol != symbol:
             leave_room(f'coin_{old_symbol}')
             update_subscriptions(old_symbol, increment=False)
-            logger.info(f"使用者 {request.sid} 從 {old_symbol} 切換到 {symbol}")
+            logger.debug(f"使用者 {request.sid} 從 {old_symbol} 切換到 {symbol}")
     
     # 記錄使用者正在查看這個幣種
     user_watching[request.sid] = symbol
     join_room(f'coin_{symbol}')
     update_subscriptions(symbol, increment=True)
     
-    logger.info(f"使用者 {request.sid} 開始查看 {symbol}")
+    logger.debug(f"使用者 {request.sid} 開始查看 {symbol}")
     
     # 發送當前快取的價格（如果有）
     if symbol in price_cache :
@@ -165,27 +176,27 @@ def handle_unwatch_coin(data):
         leave_room(f'coin_{symbol}')
         update_subscriptions(symbol, increment=False)
         del user_watching[request.sid]
-        logger.info(f"使用者 {request.sid} 停止查看 {symbol}")
+        logger.debug(f"使用者 {request.sid} 停止查看 {symbol}")
         
         emit('unwatch_response', {'status': 'success', 'symbol': symbol})
 
 if __name__ == '__main__':
     # 初始化並啟動 Binance WebSocket
-    logger.info("正在啟動 WebSocket...")
-    ws_pool.append(BinanceWebSocket(callback=on_price_update))
-    ws_pool.append(BybitWebSocket(callback=on_price_update))
-    ws_pool.append(CoinbaseWebSocket(callback=on_price_update))
-    ws_pool.append(OkxWebSocket(callback=on_price_update))
-    ws_pool.append(BitgetWebSocket(callback=on_price_update))
+    logger.debug("正在啟動 WebSocket...")
+    ws_pool.append(BinanceWebSocket(callback=on_price_update, status_callback=exchange_status_emit))
+    ws_pool.append(BybitWebSocket(callback=on_price_update, status_callback=exchange_status_emit))
+    ws_pool.append(CoinbaseWebSocket(callback=on_price_update, status_callback=exchange_status_emit))
+    ws_pool.append(OkxWebSocket(callback=on_price_update, status_callback=exchange_status_emit))
+    ws_pool.append(BitgetWebSocket(callback=on_price_update, status_callback=exchange_status_emit))
     for ws in ws_pool:
         ws.start()
 
     try:
         # 啟動 Flask-SocketIO 伺服器
-        logger.info("正在啟動 Flask 伺服器...")
+        logger.debug("正在啟動 Flask 伺服器...")
         socketio.run(app, debug=True, port=5000, use_reloader=False)
     finally:
         # 關閉 WebSocket 連接
         for ws in ws_pool:
-            logger.info(f"正在關閉 {ws.__class__.__name__} WebSocket...")
+            logger.debug(f"正在關閉 {ws.__class__.__name__} WebSocket...")
             ws.stop()

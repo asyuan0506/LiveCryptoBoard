@@ -10,14 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 class BasicWebSocket:
-    def __init__(self, callback: Callable[[str, float, str], None]):
+    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None]):
         """
         初始化 Basic WebSocket
 
         Args:
-            callback: 價格更新回調函數，接收 (symbol, price) 參數
+            callback: 價格更新callback, 接收 (symbol, price) 參數
+            status_callback: 連線狀態callback, 接收 (exchange_name, status) e.g. ('binance','connected')
         """
         self.callback = callback
+        self.status_callback = status_callback
         self.ws = None
         self.ws_thread = None
         self.is_running = False
@@ -27,22 +29,23 @@ class BasicWebSocket:
         self.exchange_name = None
         self.base_url = None
         
+
     def start(self):
         """啟動 WebSocket 連接"""
         if self.is_running:
-            logger.warning("WebSocket 已經在運行中")
+            logger.debug("WebSocket 已經在運行中")
             return
             
         self.is_running = True
         self.ws_thread = threading.Thread(target=self._run, daemon=True)
         self.ws_thread.start()
-        logger.info(f"{self.exchange_name} WebSocket 已啟動")
+        logger.debug(f"{self.exchange_name} WebSocket 已啟動")
         
     def stop(self):
         """停止 WebSocket 連接"""
         self.is_running = False
         self._disconnect()
-        logger.info(f"{self.exchange_name} WebSocket 已停止")
+        logger.warning(f"{self.exchange_name} WebSocket 已停止")
         
     def subscribe(self, symbol: str):
         """
@@ -52,13 +55,13 @@ class BasicWebSocket:
         symbol = symbol.upper()
         if symbol not in self.subscribed_symbols:
             self.subscribed_symbols.add(symbol)
-            logger.info(f"已訂閱 {self.exchange_name} {symbol} 價格更新")
+            logger.debug(f"已訂閱 {self.exchange_name} {symbol} 價格更新")
             
             try:
                 self._subscribe(self.ws, symbol)
             except Exception:
                 logger.debug(f"{self.exchange_name} ws 尚未就緒，訂閱將在連線建立後送出")
-            logger.info(f"已登錄 {self.exchange_name} {symbol} 訂閱（將在連線可用時發送）")
+            logger.debug(f"已登錄 {self.exchange_name} {symbol} 訂閱（將在連線可用時發送）")
 
     def unsubscribe(self, symbol: str):
         """
@@ -69,11 +72,11 @@ class BasicWebSocket:
         if symbol in self.subscribed_symbols:
             # 先從本地清單移除，若 WebSocket 仍然可用則嘗試發送取消訂閱
             self.subscribed_symbols.remove(symbol)
-            logger.info(f"已取消訂閱 {self.exchange_name} {symbol}")
+            logger.debug(f"已取消訂閱 {self.exchange_name} {symbol}")
 
             try:
                 self._unsubscribe(self.ws, symbol)
-                logger.info(f"已取消 {self.exchange_name} {symbol} 訂閱（如連線可用已發送取消請求）")
+                logger.debug(f"已取消 {self.exchange_name} {symbol} 訂閱（如連線可用已發送取消請求）")
             except Exception:
                 logger.debug(f"{self.exchange_name} ws 尚未就緒，取消訂閱已從本地清單移除")
             
@@ -86,10 +89,12 @@ class BasicWebSocket:
         if self.ws:
             try:
                 self.ws.close()
+                
             except Exception:
                 logger.exception("關閉 WebSocket 時發生錯誤")
             finally:
                 # 清除本地 ws 參考，讓後續重連能正確建立新的 WebSocketApp
+                self._emit_status('disconnected')
                 self.ws = None
 
     def _subscribe(self, ws, symbol: str):
@@ -101,13 +106,13 @@ class BasicWebSocket:
 
         if not ws:
             # 尚未建立 ws 連線，訂閱會在 on_open 裡送出
-            logger.debug(f"_subscribe: ws 尚未就緒，延後發送 {symbol} 訂閱")
+            logger.warning(f"_subscribe: ws 尚未就緒，延後發送 {symbol} 訂閱")
             return
         try:
             msg_text = json.dumps(subscribe_msg)
             logger.debug(f"_subscribe -> 將送出給 {self.exchange_name}: {msg_text}")
             ws.send(msg_text)
-            logger.info(f"已向 {self.exchange_name} WebSocket 發送訂閱請求: {symbol}USDT")
+            logger.debug(f"已向 {self.exchange_name} WebSocket 發送訂閱請求: {symbol}USDT")
         except Exception:
             logger.exception(f"發送訂閱請求 {symbol}USDT 時發生錯誤")
 
@@ -119,11 +124,11 @@ class BasicWebSocket:
         unsubscribe_msg = self._creat_subscribe_msg(symbol, 'unsubscribe')
 
         if not ws:
-            logger.debug(f"_unsubscribe: ws 尚未就緒，無法發送取消訂閱 {symbol}")
+            logger.warning(f"_unsubscribe: ws 尚未就緒，無法發送取消訂閱 {symbol}")
             return
         try:
             ws.send(json.dumps(unsubscribe_msg))
-            logger.info(f"已向 {self.exchange_name} WebSocket 發送取消訂閱請求: {symbol}USDT")
+            logger.debug(f"已向 {self.exchange_name} WebSocket 發送取消訂閱請求: {symbol}USDT")
         except Exception:
             logger.exception(f"發送取消訂閱請求 {symbol}USDT 時發生錯誤")
 
@@ -146,7 +151,8 @@ class BasicWebSocket:
                     continue
 
                 logger.info(f"正在連接 {self.exchange_name} WebSocket: {url}")
-                
+                self._emit_status('connecting')
+
                 self.ws = websocket._app.WebSocketApp(
                     url,
                     on_open=self._on_open,
@@ -161,7 +167,7 @@ class BasicWebSocket:
                 
                 # 如果還在運行中，等待後重連
                 if self.is_running:
-                    logger.info(f"{self.exchange_name} WebSocket 已斷開，{self.reconnect_delay} 秒後重連...")
+                    logger.warning(f"{self.exchange_name} WebSocket 已斷開，{self.reconnect_delay} 秒後重連...")
                     time.sleep(self.reconnect_delay)
                     
             except Exception as e:
@@ -171,14 +177,15 @@ class BasicWebSocket:
 
     def _on_open(self, ws):
         """WebSocket 連接建立時的callback"""
-        logger.info(f"{self.exchange_name} WebSocket 連接已建立")
-        # 連線建立後，向 Bybit 發送目前已登記的所有訂閱
+        logger.debug(f"{self.exchange_name} WebSocket 連接已建立")
+        # 連線建立後，向交易所發送目前已登記的所有訂閱
         try:
             for symbol in list(self.subscribed_symbols):
                 try:
                     self._subscribe(ws, symbol)
                 except Exception:
                     logger.exception(f"向 {self.exchange_name} 發送訂閱 {symbol} 時發生錯誤")
+            self._emit_status('connected')
         except Exception:
             logger.exception("在 on_open 處理訂閱時發生未預期錯誤")
 
@@ -187,14 +194,24 @@ class BasicWebSocket:
 
     def _on_error(self, ws, error):
         """WebSocket 錯誤時的callback"""
+        self._emit_status('error')
         logger.error(f"{self.exchange_name} WebSocket 錯誤: {error}")
         
     def _on_close(self, ws, close_status_code, close_msg):
         """WebSocket 關閉時的callback"""
         # 不在此清空或取消本地訂閱清單；保留訂閱讓重連時能自動重新訂閱
-        logger.info(f"{self.exchange_name} WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
+        self._emit_status('disconnected')
+        logger.warning(f"{self.exchange_name} WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
 
     def _on_ping(self, ws, message):
         """WebSocket 收到 ping 時的callback"""
         # 預設不回送應用層 pong（避免對期望傳輸層 ping/pong 的伺服器產生無效請求）
-        logger.debug(f"收到 {self.exchange_name} WebSocket ping（略過應用層回覆）")
+        logger.debug(f"收到 {self.exchange_name} WebSocket ping (略過應用層回覆) ")
+
+    def _emit_status(self, status: str):
+        try:
+            if self.status_callback and self.exchange_name:
+                self.status_callback(self.exchange_name, status)
+                logger.debug(f"已發送 {self.exchange_name} 狀態: {status}")
+        except Exception:
+            logger.exception("發送狀態更新時發生錯誤")

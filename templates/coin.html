@@ -311,8 +311,14 @@
 
         socket.on('connect', function () {
             console.log('已連接到伺服器');
-            exchanges.forEach(exchange => updateConnectionStatus(exchange, 'connected'));
+            // exchanges.forEach(exchange => updateConnectionStatus(exchange, 'connected'));
             socket.emit('watch_coin', { symbol: coinSymbol }); // 發送 watch_coin
+        });
+
+        socket.on('exchange_status', function (data) {
+            if (data && data.exchange) {
+                updateConnectionStatus(data.exchange, data.status);
+            }
         });
 
         socket.on('watch_response', function (data) {
@@ -355,7 +361,7 @@
             const price = data.price;
             const timestamp = new Date(data.timestamp);
             const displayEl = document.getElementById(`${exchange}-price-display`);
-            updateConnectionStatus(exchange, 'connected');
+            // updateConnectionStatus(exchange, 'connected'); 
             lastPrices[exchange] = price;
             priceHistories[exchange].push({ price, timestamp });
             if (priceHistories[exchange].length > 100) {
