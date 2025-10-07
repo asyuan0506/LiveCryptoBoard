@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class CoinbaseWebSocket(BasicWebSocket):
-    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None] = lambda x, y: None):
+    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None]):
         super().__init__(callback, status_callback)
         self.exchange_name = 'Coinbase'
         self.base_url = "wss://ws-feed.exchange.coinbase.com"
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         print(f"[測試] {symbol}: ${price:,.2f} (來自: {exchange})")
 
     # 建立 WebSocket 實例
-    coinbase_ws = CoinbaseWebSocket(callback=test_callback)
+    coinbase_ws = CoinbaseWebSocket(callback=test_callback, status_callback=lambda ex, st: print(f"[狀態] {ex}: {st}"))
     
     # 啟動
     coinbase_ws.start()

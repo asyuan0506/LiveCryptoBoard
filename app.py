@@ -3,7 +3,7 @@ eventlet.monkey_patch() # 用這個才可以讓async_mode = 'eventlet' 正常運
 
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask_cors import CORS
+#from flask_cors import CORS
 from datetime import datetime
 from typing import Dict
 import logging
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)
+#CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 BASIC_COIN_LIST = {
@@ -31,8 +31,6 @@ BASIC_COIN_LIST = {
     'DOGE': 'Dogecoin',
     'MATIC': 'Polygon',
 }
-
-SUPPORTED_EXCHANGES = ['Binance', 'Bybit', 'Coinbase', 'Okx', 'Bitget']
 
 # Global variables
 price_cache: Dict[str, Dict[str, float]] = {}  # {coin: {exchange: price}}

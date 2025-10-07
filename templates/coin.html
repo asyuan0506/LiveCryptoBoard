@@ -319,6 +319,7 @@
             if (data && data.exchange) {
                 updateConnectionStatus(data.exchange, data.status);
             }
+            console.log('交易所狀態:', data);
         });
 
         socket.on('watch_response', function (data) {

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class OkxWebSocket(BasicWebSocket):
-    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None] = lambda x, y: None):
+    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None]):
         super().__init__(callback, status_callback)
         self.exchange_name = 'OKX'
         self.base_url = "wss://ws.okx.com:8443/ws/v5/public"
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         print(f"[測試] {symbol}: ${price:,.2f} (來自: {exchange})")
 
     # 建立 WebSocket 實例
-    okx_ws = OkxWebSocket(callback=test_callback)
+    okx_ws = OkxWebSocket(callback=test_callback, status_callback=lambda ex, st: print(f"[狀態] {ex}: {st}"))
     
     # 啟動
     okx_ws.start()

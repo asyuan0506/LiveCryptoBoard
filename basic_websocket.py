@@ -162,6 +162,7 @@ class BasicWebSocket:
                     on_ping=self._on_ping,
                 )
                 
+                self._emit_status('connected')
                 # 運行 WebSocket（這會阻塞直到連接關閉）
                 self.ws.run_forever()
                 

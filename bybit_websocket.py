@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class BybitWebSocket(BasicWebSocket):
-    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None] = lambda x, y: None):
+    def __init__(self, callback: Callable[[str, float, str], None], status_callback: Callable[[str, str], None]):
         super().__init__(callback, status_callback)
         self.exchange_name = 'Bybit'
         self.base_url = "wss://stream.bybit.com/v5/public/spot"
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         print(f"[測試] {symbol}: ${price:,.2f} (來自: {exchange})")
 
     # 建立 WebSocket 實例
-    bybit_ws = BybitWebSocket(callback=test_callback)
+    bybit_ws = BybitWebSocket(callback=test_callback, status_callback=lambda ex, st: print(f"[狀態] {ex}: {st}"))
     
     # 啟動
     bybit_ws.start()
