@@ -67,10 +67,6 @@ class BybitWebSocket(BasicWebSocket):
                 }))
         except Exception:
             logger.exception("回覆 ping 時發生錯誤")
-        
-    def _on_close(self, ws, close_status_code, close_msg):
-        """WebSocket 關閉時的callback"""
-        logger.info(f"Bybit WebSocket 已關閉 (代碼: {close_status_code}, 訊息: {close_msg})")
 
 
 # 測試用程式碼
