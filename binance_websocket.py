@@ -1,8 +1,6 @@
 import json
-import threading
 import time
-import websocket
-from typing import Callable, Dict, Set
+from typing import Callable
 from basic_websocket import BasicWebSocket
 import logging
 
@@ -14,10 +12,7 @@ class BinanceWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
         self.exchange_name = 'Binance'
-        self.requires_reconnect_on_subscribe = False
-        
-    def _get_websocket_url(self):
-        return "wss://stream.binance.com:9443/ws"
+        self.base_url = "wss://stream.binance.com:9443/ws"
       
     def _on_message(self, ws, message):
         """
@@ -61,9 +56,6 @@ class BinanceWebSocket(BasicWebSocket):
             ],
             "id": time.time_ns() % (10 ** 8)
         }
-    def _on_ping(self, ws, message):
-        """WebSocket 收到 ping 時的callback"""
-        logger.debug("收到 Binance WebSocket ping")
 
 # 測試用程式碼
 if __name__ == "__main__":

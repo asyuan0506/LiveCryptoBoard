@@ -1,13 +1,7 @@
-"""
-Bitget WebSocket 模組
-用於連接 Bitget WebSocket API 並接收加密貨幣即時價格
-Highly recommend you to subscribe less than 50 channels in one connection
-"""
 import json
 import threading
 import time
-import websocket
-from typing import Callable, Dict, Set
+from typing import Callable
 import logging
 from basic_websocket import BasicWebSocket
 
@@ -19,21 +13,8 @@ class BitgetWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
         self.exchange_name = 'Bitget'
-        self.requires_reconnect_on_subscribe = False
-        
-    def _get_websocket_url(self):
-        return "wss://ws.bitget.com/v2/ws/public"
-    
-    def _creat_subscribe_msg(self, symbol: str, type: str):
-        """生成 Bitget 訂閱訊息"""
-        return {
-            "op": type,
-            "args": [{
-                "instType":"SPOT",
-                "channel":"trade",
-                "instId":f"{symbol}USDT"
-            },]
-        }  
+        self.base_url = "wss://ws.bitget.com/v2/ws/public"
+        self.ws_ping_thread = None
         
     def _on_message(self, ws, message):
         """
@@ -67,10 +48,27 @@ class BitgetWebSocket(BasicWebSocket):
                 logger.error(f"JSON 解析錯誤: {e}")
         except Exception as e:
             logger.error(f"處理訊息時發生錯誤: {e}")
-            
-    def _on_ping(self, ws, message):
-        """WebSocket 收到 ping 時的callback"""
-        """Bitget 不會主動發送 ping"""
+    
+    def _creat_subscribe_msg(self, symbol: str, type: str):
+        """生成 Bitget 訂閱訊息"""
+        return {
+            "op": type,
+            "args": [{
+                "instType":"SPOT",
+                "channel":"trade",
+                "instId":f"{symbol}USDT"
+            },]
+        }  
+
+    def _on_open(self, ws):
+        """WebSocket 連接建立時的callback，啟動 ping 執行緒並發送已登記的訂閱"""
+        super()._on_open(ws)
+
+        # 啟動定期 ping 的執行緒（如果尚未啟動）
+        if not self.ws_ping_thread or not self.ws_ping_thread.is_alive():
+            self.ws_ping_thread = threading.Thread(target=self._initiate_ping, daemon=True)
+            self.ws_ping_thread.start()
+            logger.info("已啟動 Bitget WebSocket 定期 ping 執行緒")
     
     def _initiate_ping(self):
         """啟動定期發送 ping"""

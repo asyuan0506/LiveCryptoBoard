@@ -1,11 +1,11 @@
 import eventlet # 使用 async_mode eventlet
 eventlet.monkey_patch() # 用這個才可以讓async_mode = 'eventlet' 正常運作 否則使用 mode 'threading'
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 from datetime import datetime
-from typing import Dict, Set
+from typing import Dict
 import logging
 
 from binance_websocket import BinanceWebSocket

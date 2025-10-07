@@ -1,8 +1,6 @@
 import json
-import threading
 import time
-import websocket
-from typing import Callable, Dict, Set
+from typing import Callable
 from basic_websocket import BasicWebSocket
 import logging
 
@@ -13,10 +11,7 @@ class CoinbaseWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
         self.exchange_name = 'Coinbase'
-        self.requires_reconnect_on_subscribe = False
-    
-    def _get_websocket_url(self):
-        return "wss://ws-feed.exchange.coinbase.com"
+        self.base_url = "wss://ws-feed.exchange.coinbase.com"
         
     def _on_message(self, ws, message):
         """
@@ -57,9 +52,6 @@ class CoinbaseWebSocket(BasicWebSocket):
             ],
             "channels": ["ticker"]
         }
-    def _on_ping(self, ws, message): # TODO: Implement Coinbase pong response if needed
-        """WebSocket 收到 ping 時的callback"""
-        pass
     
 # 測試用程式碼
 if __name__ == "__main__":

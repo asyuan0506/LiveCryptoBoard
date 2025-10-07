@@ -1,8 +1,6 @@
 import json
-import threading
 import time
-import websocket
-from typing import Callable, Dict, Set
+from typing import Callable
 from basic_websocket import BasicWebSocket
 import logging
 
@@ -14,10 +12,7 @@ class OkxWebSocket(BasicWebSocket):
     def __init__(self, callback: Callable[[str, float, str], None]):
         super().__init__(callback)
         self.exchange_name = 'OKX'
-        self.requires_reconnect_on_subscribe = False
-        
-    def _get_websocket_url(self):
-        return "wss://ws.okx.com:8443/ws/v5/public"
+        self.base_url = "wss://ws.okx.com:8443/ws/v5/public"
       
     def _on_message(self, ws, message):
         """
