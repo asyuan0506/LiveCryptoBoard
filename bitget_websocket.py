@@ -68,7 +68,7 @@ class BitgetWebSocket(BasicWebSocket):
         if not self.ws_ping_thread or not self.ws_ping_thread.is_alive():
             self.ws_ping_thread = threading.Thread(target=self._initiate_ping, daemon=True)
             self.ws_ping_thread.start()
-            logger.info("已啟動 Bitget WebSocket 定期 ping 執行緒")
+            logger.debug("已啟動 Bitget WebSocket 定期 ping 執行緒")
     
     def _initiate_ping(self):
         """啟動定期發送 ping"""

@@ -361,7 +361,7 @@
             const price = data.price;
             const timestamp = new Date(data.timestamp);
             const displayEl = document.getElementById(`${exchange}-price-display`);
-            // updateConnectionStatus(exchange, 'connected'); 
+            updateConnectionStatus(exchange, 'connected'); // TODO: 根據實際狀態更新
             lastPrices[exchange] = price;
             priceHistories[exchange].push({ price, timestamp });
             if (priceHistories[exchange].length > 100) {
